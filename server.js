@@ -15,6 +15,18 @@ app.use(cors());
 app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
+
+// Route to get public IP address
+app.get('/my-ip', async (req, res) => {
+  try {
+    const response = await axios.get('https://api.ipify.org?format=json');
+    res.json({ ip: response.data.ip });
+  } catch (err) {
+    res.status(500).json({ error: 'Could not fetch IP' });
+  }
+});
+
+
 app.get('/', (req, res) => {
   res.send('Backend API is running');
 });
@@ -64,6 +76,11 @@ app.post('/posts/:id/comment', async (req, res) => {
   post.comments.push(comment);
   await post.save();
   res.json(post);
+});
+
+app.get('/my-ip', (req, res) => {
+  const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+  res.json({ ip });
 });
 
 // Start server
