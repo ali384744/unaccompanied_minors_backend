@@ -9,24 +9,18 @@ const cors = require('cors');
 const multer = require('multer');
 const path = require('path');
 
-
 const app = express();
 app.use(cors());
 app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-
-// Route to get public IP address
-app.get('/my-ip', async (req, res) => {
-  try {
-    const response = await axios.get('https://api.ipify.org?format=json');
-    res.json({ ip: response.data.ip });
-  } catch (err) {
-    res.status(500).json({ error: 'Could not fetch IP' });
-  }
+// Route to get Render's public IP
+app.get('/my-ip', (req, res) => {
+  const ip = req.headers['x-forwarded-for'] || req.socket?.remoteAddress || null;
+  res.json({ ip });
 });
 
-
+// Root route to check if server is up
 app.get('/', (req, res) => {
   res.send('Backend API is running');
 });
@@ -35,7 +29,6 @@ app.get('/', (req, res) => {
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log('MongoDB connected'))
   .catch((err) => console.error('MongoDB connection error:', err));
-
 
 // Storage for image uploads
 const storage = multer.diskStorage({
@@ -78,18 +71,14 @@ app.post('/posts/:id/comment', async (req, res) => {
   res.json(post);
 });
 
-app.get('/my-ip', (req, res) => {
-  const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
-  res.json({ ip });
-});
-
 // Start server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
+// Error handlers
 process.on('uncaughtException', err => {
   console.error('Uncaught Exception:', err);
 });
 process.on('unhandledRejection', err => {
   console.error('Unhandled Rejection:', err);
 });
-
