@@ -10,7 +10,10 @@ const multer = require('multer');
 const path = require('path');
 
 const app = express();
-app.use(cors());
+app.use(cors({
+  origin: 'https://unaccompaniedminorsinfrance.netlify.app',
+  credentials: true,
+}));
 app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
@@ -70,6 +73,26 @@ app.post('/posts/:id/comment', async (req, res) => {
   await post.save();
   res.json(post);
 });
+// Delete a post
+app.delete('/posts/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const deletedPost = await Post.findByIdAndDelete(id);
+    if (!deletedPost) return res.status(404).json({ message: 'Post not found' });
+    res.json({ message: 'Post deleted successfully' });
+  } catch (err) {
+    console.error('Delete post error:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Serve React static files from the build folder
+app.use(express.static(path.join(__dirname, 'build')));
+
+// For any other routes, serve React's index.html (for React Router to work)
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'build', 'index.html'));
+});
 
 // Start server
 const PORT = process.env.PORT || 5000;
@@ -82,3 +105,4 @@ process.on('uncaughtException', err => {
 process.on('unhandledRejection', err => {
   console.error('Unhandled Rejection:', err);
 });
+
